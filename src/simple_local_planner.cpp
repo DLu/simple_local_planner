@@ -11,8 +11,10 @@ class SimpleLocalPlanner : public nav_core::BaseLocalPlanner {
         ros::NodeHandle private_nh("~/" + name);
         private_nh.param("max_trans_vel", max_trans_vel_, 1.0);
         private_nh.param("max_rot_vel", max_rot_vel_, 1.0);
-        private_nh.param("position_precision", p_precision_, 0.5);
-        private_nh.param("orientation_precision", o_precision_, 0.1);
+        private_nh.param("position_window", p_window_, 0.5);
+        private_nh.param("orientation_window", o_window_, 0.1);        
+        private_nh.param("position_precision", p_precision_, 0.2);
+        private_nh.param("orientation_precision", o_precision_, 0.05);
         private_nh.param("base_frame", base_frame_, std::string("/base_footprint"));
         tf_ = tf;
         plan_index_ = 1;
@@ -30,19 +32,24 @@ class SimpleLocalPlanner : public nav_core::BaseLocalPlanner {
     
     bool computeVelocityCommands(geometry_msgs::Twist& cmd_vel){
         double gx,gy,gth;
+        int n = global_plan_.size();
 
         // advance to next goal pose
-        while( plan_index_ < global_plan_.size() ){
+        while( plan_index_ < n ){
             getTransformedPosition(global_plan_[plan_index_], gx, gy, gth);
-                   
-            if( hypot(gx, gy) < p_precision_ && gth < o_precision_ ){
+            double dist = hypot(gx, gy);
+            
+            if( (plan_index_== n-1 && 
+                    dist < p_precision_ && gth < o_precision_)
+                || (plan_index_ < n-1 && 
+                    dist < p_window_ && gth < o_window_)){
                 plan_index_++;    
             }else{
                 break;
             }            
         }
         
-        if( plan_index_ >= global_plan_.size() ){
+        if( plan_index_ >= n ){
             return true;
         }
 
@@ -75,7 +82,8 @@ class SimpleLocalPlanner : public nav_core::BaseLocalPlanner {
         tf::TransformListener* tf_;
         std::string base_frame_;
         int plan_index_;
-        double max_trans_vel_, max_rot_vel_, p_precision_, o_precision_;
+        double max_trans_vel_, max_rot_vel_;
+        double p_window_, o_window_, p_precision_, o_precision_;
      
 };
 };
