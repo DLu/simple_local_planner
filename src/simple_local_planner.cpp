@@ -15,6 +15,7 @@ class SimpleLocalPlanner : public nav_core::BaseLocalPlanner {
         private_nh.param("orientation_window", o_window_, 0.1);        
         private_nh.param("position_precision", p_precision_, 0.2);
         private_nh.param("orientation_precision", o_precision_, 0.05);
+        private_nh.param("forward_angle", forward_angle_, 0.0);
         private_nh.param("base_frame", base_frame_, std::string("/base_footprint"));
         tf_ = tf;
         plan_index_ = 1;
@@ -75,7 +76,7 @@ class SimpleLocalPlanner : public nav_core::BaseLocalPlanner {
         tf_->transformPose(base_frame_, pose, ps);
         x = ps.pose.position.x;
         y = ps.pose.position.y,
-        theta = tf::getYaw(ps.pose.orientation);
+        theta = tf::getYaw(ps.pose.orientation)-forward_angle_;
     }
     
         std::vector<geometry_msgs::PoseStamped> global_plan_;
@@ -84,6 +85,7 @@ class SimpleLocalPlanner : public nav_core::BaseLocalPlanner {
         int plan_index_;
         double max_trans_vel_, max_rot_vel_;
         double p_window_, o_window_, p_precision_, o_precision_;
+        double forward_angle_;
      
 };
 };
