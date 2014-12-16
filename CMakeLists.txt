@@ -14,7 +14,7 @@ include_directories(
 )
 
 add_library(simple_local_planner
-  src/${PROJECT_NAME}/simple_local_planner.cpp
+  src/simple_local_planner.cpp
 )
 
 
