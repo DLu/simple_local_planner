@@ -1,0 +1,7 @@
+<library path="lib/libsimple_local_planner">
+  <class name="simple_local_planner/SimpleLocalPlanner" type="simple_local_planner::SimpleLocalPlanner" base_class_type="nav_core::BaseLocalPlanner">
+    <description>
+      An implementation of a simple local planner.
+    </description>
+  </class>
+</library>
