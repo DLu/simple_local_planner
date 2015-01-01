@@ -17,6 +17,8 @@ class SimpleLocalPlanner : public nav_core::BaseLocalPlanner {
         private_nh.param("orientation_precision", o_precision_, 0.05);
         private_nh.param("forward_angle", forward_angle_, 0.0);
         private_nh.param("base_frame", base_frame_, std::string("/base_footprint"));
+        private_nh.param("scale_trans", scale_trans_, 1.0);
+        private_nh.param("scale_rot", scale_rot_, 1.0);
         tf_ = tf;
         plan_index_ = 1;
     }
@@ -60,10 +62,10 @@ class SimpleLocalPlanner : public nav_core::BaseLocalPlanner {
             gth = copysign(max_rot_vel_, gth);
         }
        
-        cmd_vel.linear.x = gx;
-        cmd_vel.linear.y = gy;
-        cmd_vel.angular.z = gth;
-        //ROS_INFO("%.2f %.2f %.2f       %d", gx, gy, gth, plan_index_);
+        cmd_vel.linear.x = gx * scale_trans_;
+        cmd_vel.linear.y = gy * scale_trans_;
+        cmd_vel.angular.z = gth*scale_rot_;
+        ROS_INFO("%.2f %.2f %.2f       %d    %f %f", gx, gy, gth, plan_index_, scale_trans_, scale_rot_);
                 
         return true;
     }
@@ -86,6 +88,8 @@ class SimpleLocalPlanner : public nav_core::BaseLocalPlanner {
         double max_trans_vel_, max_rot_vel_;
         double p_window_, o_window_, p_precision_, o_precision_;
         double forward_angle_;
+        double scale_trans_, scale_rot_;
+        
      
 };
 };
