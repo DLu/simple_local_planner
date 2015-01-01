@@ -19,6 +19,8 @@ class SimpleLocalPlanner : public nav_core::BaseLocalPlanner {
         private_nh.param("base_frame", base_frame_, std::string("/base_footprint"));
         private_nh.param("scale_trans", scale_trans_, 1.0);
         private_nh.param("scale_rot", scale_rot_, 1.0);
+        pub_ = private_nh.advertise<geometry_msgs::PoseStamped>("target_pose", 5);
+        
         tf_ = tf;
         plan_index_ = 1;
     }
@@ -43,9 +45,9 @@ class SimpleLocalPlanner : public nav_core::BaseLocalPlanner {
             double dist = hypot(gx, gy);
             
             if( (plan_index_== n-1 && 
-                    dist < p_precision_ && gth < o_precision_)
+                    dist < p_precision_ && fabs(gth) < o_precision_)
                 || (plan_index_ < n-1 && 
-                    dist < p_window_ && gth < o_window_)){
+                    dist < p_window_ && fabs(gth) < o_window_)){
                 plan_index_++;    
             }else{
                 break;
@@ -55,17 +57,28 @@ class SimpleLocalPlanner : public nav_core::BaseLocalPlanner {
         if( plan_index_ >= n ){
             return true;
         }
+        pub_.publish(global_plan_[plan_index_]);
 
-        getTransformedPosition(global_plan_[plan_index_], gx, gy, gth);     
+        getTransformedPosition(global_plan_[plan_index_], gx, gy, gth);  
+        
+        gx *= scale_trans_;
+        gy *= scale_trans_;
+        gth *= scale_rot_;   
                
+        if(fabs(gx) > max_trans_vel_){
+            gx = copysign(max_trans_vel_, gx);
+        }
+        if(fabs(gy) > max_trans_vel_){
+            gy = copysign(max_trans_vel_, gy);
+        }
         if(fabs(gth) > max_rot_vel_){
             gth = copysign(max_rot_vel_, gth);
         }
        
-        cmd_vel.linear.x = gx * scale_trans_;
-        cmd_vel.linear.y = gy * scale_trans_;
-        cmd_vel.angular.z = gth*scale_rot_;
-        ROS_INFO("%.2f %.2f %.2f       %d    %f %f", gx, gy, gth, plan_index_, scale_trans_, scale_rot_);
+        cmd_vel.linear.x = gx;
+        cmd_vel.linear.y = gy;
+        cmd_vel.angular.z = gth;
+        //ROS_INFO("%.2f %.2f %.2f       %d", gx, gy, gth, plan_index_);
                 
         return true;
     }
@@ -82,6 +95,7 @@ class SimpleLocalPlanner : public nav_core::BaseLocalPlanner {
     }
     
         std::vector<geometry_msgs::PoseStamped> global_plan_;
+        ros::Publisher pub_;
         tf::TransformListener* tf_;
         std::string base_frame_;
         int plan_index_;
